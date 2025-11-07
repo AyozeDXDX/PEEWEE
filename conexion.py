@@ -1,19 +1,13 @@
 from peewee import MySQLDatabase
-import logging
 
 # Configuración de la conexión a la BD
-# *** MODIFICA ESTOS VALORES CON TUS CREDENCIALES ***
+# MODIFICAR CREDENCIALES ANTES DE USAR
 DB_NAME = 'Empresa'
-DB_USER = 'tu_usuario'      # Ejemplo: 'root'
-DB_PASS = 'tu_contraseña'   # Ejemplo: 'password'
-DB_HOST = 'localhost'       # O la IP de tu servidor MySQL
-DB_PORT = 3306              # Puerto estándar de MySQL
+DB_USER = 'root'
+DB_PASS = '1234'
+DB_HOST = '127.0.0.1'       # IP de MySQL
+DB_PORT = 3306              # Puerto de MySQL
 
-# Inicializar el logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Instancia de la base de datos (Global)
 db = MySQLDatabase(
     DB_NAME,
     user=DB_USER,
@@ -28,10 +22,10 @@ def conectar_bd():
     """
     try:
         db.connect()
-        logger.info(f"Conexión exitosa a la base de datos '{DB_NAME}'")
+        print(f"Conexión exitosa a la base de datos '{DB_NAME}'")
         return True
     except Exception as e:
-        logger.error(f"Error al conectar a la base de datos '{DB_NAME}': {e}")
+        print(f"Error al conectar a la base de datos '{DB_NAME}': {e}")
         return False
 
 def cerrar_bd():
@@ -40,10 +34,4 @@ def cerrar_bd():
     """
     if not db.is_closed():
         db.close()
-        logger.info(f"Conexión a '{DB_NAME}' cerrada.")
-
-if __name__ == '__main__':
-    if conectar_bd():
-        # Aquí se podría poner código de prueba de conexión
-        pass
-    cerrar_bd()
+        print(f"Conexión a '{DB_NAME}' cerrada.")
