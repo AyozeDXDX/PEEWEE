@@ -4,21 +4,24 @@ from crear_tablas import Cliente, Empleado, Proyecto, EmpleadoProyecto
 
 def insertar_clientes():
     """
-    Inserta múltiples clientes en la tabla 'clientes' utilizando bulk_create().
+    Inserta múltiples clientes en la tabla 'clientes' utilizando bulk_create()
+    definiendo los datos como una lista de objetos Cliente.
     """
     if not conectar_bd():
         return
-
-    clientes_data = [
-        {'dni_cif': '12345678A', 'nombre_cliente': 'Empresa A', 'tlf': '912345678', 'email': 'contacto@empresa-a.com'},
-        {'dni_cif': 'B87654321', 'nombre_cliente': 'Empresa B', 'tlf': '934567890', 'email': 'info@empresa-b.es'},
-        {'dni_cif': '98765432B', 'nombre_cliente': 'Consumidor Final', 'tlf': '600112233', 'email': 'cliente@email.com'},
+    
+    # creamos una lista de objetos Cliente
+    clientes_para_insertar = [
+        Cliente(dni_cif='12345678A', nombre_cliente='Empresa A', tlf='912345678', email='contacto@empresa-a.com'),
+        Cliente(dni_cif='B87654321', nombre_cliente='Empresa B', tlf='934567890', email='info@empresa-b.es'),
+        Cliente(dni_cif='98765432B', nombre_cliente='Consumidor Final', tlf='600112233', email='cliente@email.com'),
     ]
 
     try:
         with db.atomic():
-            Cliente.bulk_create(clientes_data)
-        print(f"{len(clientes_data)} clientes insertados correctamente.")
+            Cliente.bulk_create(clientes_para_insertar)
+        
+        print(f"{len(clientes_para_insertar)} clientes insertados correctamente.")
     except IntegrityError as e:
         print(f"Error de integridad al insertar clientes: {e}")
     except Exception as e:
@@ -28,21 +31,24 @@ def insertar_clientes():
 
 def insertar_empleados():
     """
-    Inserta múltiples empleados en la tabla 'empleados' utilizando bulk_create().
+    Inserta múltiples empleados en la tabla 'empleados' utilizando bulk_create()
+    definiendo los datos como una lista de objetos Empleado.
     """
     if not conectar_bd():
         return
 
-    empleados_data = [
-        {'dni': '11111111X', 'nombre': 'Juan Pérez', 'jefe': True, 'email': 'juan.perez@empresa.com'},
-        {'dni': '22222222Y', 'nombre': 'Ana López', 'jefe': False, 'email': 'ana.lopez@empresa.com'},
-        {'dni': '33333333Z', 'nombre': 'Carlos García', 'jefe': False, 'email': 'carlos.garcia@empresa.com'},
+    # Definimos los datos como una lista de objetos Empleado
+    empleados_para_insertar = [
+        Empleado(dni='11111111X', nombre='Juan Pérez', jefe=True, email='juan.perez@empresa.com'),
+        Empleado(dni='22222222Y', nombre='Ana López', jefe=False, email='ana.lopez@empresa.com'),
+        Empleado(dni='33333333Z', nombre='Carlos García', jefe=False, email='carlos.garcia@empresa.com'),
     ]
 
     try:
         with db.atomic():
-            Empleado.bulk_create(empleados_data)
-        print(f"{len(empleados_data)} empleados insertados correctamente.")
+            Empleado.bulk_create(empleados_para_insertar)
+
+        print(f"{len(empleados_para_insertar)} empleados insertados correctamente.")
     except IntegrityError as e:
         print(f"Error de integridad al insertar empleados: {e}")
     except Exception as e:
@@ -80,8 +86,8 @@ def insertar_proyecto():
                 descripcion='Creación de la página web y tienda online para Empresa A.',
                 fecha_inicio='2024-01-15',
                 presupuesto=15000.00,
-                id_cliente=cliente,
-                id_jefe_proyecto=jefe
+                id_cliente=cliente,  # Pasamos el objeto Cliente
+                id_jefe_proyecto=jefe # Pasamos el objeto Empleado
             )
             print(f"Proyecto '{proyecto.titulo_proyecto}' insertado con ID: {proyecto.id_proyecto}")
 
@@ -102,7 +108,7 @@ def asignar_empleado_a_proyecto():
     try:
         with db.atomic():
             empleado_id = '22222222Y'
-            proyecto_id = 1  # Asumimos que el proyecto con ID 1 ya existe
+            proyecto_id = 1
 
             # Verificar que el empleado y el proyecto existen
             empleado = Empleado.get_or_none(Empleado.dni == empleado_id)
@@ -115,6 +121,7 @@ def asignar_empleado_a_proyecto():
                 print(f"Error: El proyecto con ID '{proyecto_id}' no existe.")
                 return
 
+            # Asignar el empleado al proyecto
             EmpleadoProyecto.create(
                 id_empleado=empleado,
                 id_proyecto=proyecto

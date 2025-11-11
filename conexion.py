@@ -3,8 +3,8 @@ from peewee import MySQLDatabase
 # Configuración de la conexión a la BD
 # MODIFICAR CREDENCIALES ANTES DE USAR
 DB_NAME = 'Empresa'
-DB_USER = 'root'
-DB_PASS = '1234'
+DB_USER = 'ayoze'
+DB_PASS = '9978'
 DB_HOST = '127.0.0.1'       # IP de MySQL
 DB_PORT = 3306              # Puerto de MySQL
 
