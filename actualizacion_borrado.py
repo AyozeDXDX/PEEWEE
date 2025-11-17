@@ -261,7 +261,7 @@ if __name__ == '__main__':
     if conectar_bd():
         try:
             for p in Proyecto.select():
-                print(f"  - {p.titulo_proyecto}: ${p.presupuesto}")
+                print(f"  - {p.titulo_proyecto}: {p.presupuesto}€")
         finally:
             cerrar_bd()
     
@@ -272,7 +272,7 @@ if __name__ == '__main__':
     if conectar_bd():
         try:
             for p in Proyecto.select():
-                print(f"  - {p.titulo_proyecto}: ${p.presupuesto}")
+                print(f"  - {p.titulo_proyecto}: {p.presupuesto}€")
         finally:
             cerrar_bd()
 
@@ -319,7 +319,7 @@ if __name__ == '__main__':
     if conectar_bd():
         try:
             for p in Proyecto.select():
-                print(f"  - {p.titulo_proyecto}: Presupuesto=${p.presupuesto}, Fin={p.fecha_fin}")
+                print(f"  - {p.titulo_proyecto}: Presupuesto={p.presupuesto}€, Fin={p.fecha_fin}")
         finally:
             cerrar_bd()
     
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     if conectar_bd():
         try:
             for p in Proyecto.select():
-                print(f"  - {p.titulo_proyecto}: Presupuesto=${p.presupuesto}, Fin={p.fecha_fin}")
+                print(f"  - {p.titulo_proyecto}: Presupuesto={p.presupuesto}€, Fin={p.fecha_fin}")
         finally:
             cerrar_bd()
 
