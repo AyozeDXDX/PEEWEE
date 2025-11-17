@@ -157,8 +157,7 @@ def transaccion_limpieza_proyectos(id_proyecto_destino):
             print(f"Error: El proyecto destino con ID {id_proyecto_destino} no existe.")
             return
 
-        # 2. Calcular la fecha límite (hace 5 años)
-        # Usamos SQL para el cálculo de 5 años
+        # 2. Calcular la fecha límite
         fecha_limite = fn.NOW() - SQL('INTERVAL 5 YEAR')
 
         # 3. Subconsulta: Obtener los IDs de los proyectos obsoletos
@@ -198,7 +197,7 @@ def transaccion_limpieza_proyectos(id_proyecto_destino):
     finally:
         cerrar_bd()
 
-# --- 7. Eliminar Cliente y Datos Asociados (Cascada Manual) ---
+# --- 7. Eliminar Cliente y Datos Asociados ---
 def eliminar_cliente_y_proyectos(dni_cif):
     """
     Elimina un cliente y todos sus datos asociados, incluidos 
