@@ -18,7 +18,7 @@ db = MySQLDatabase(
 
 def conectar_bd():
     """
-    Intenta conectar a la base de datos "Empresa" utilizando try-except[cite: 17].
+    Intenta conectar a la base de datos "Empresa" utilizando try-except.
     """
     try:
         db.connect()
