@@ -278,7 +278,6 @@ if __name__ == '__main__':
 
     print("PRUEBA 3: Reasignar jefe de proyecto")
     print("Reasignando proyecto 'App Móvil' a 'Juan Pérez' (11111111X)...")
-    print("(Nota: Esto debería fallar si Juan ya es jefe de otro proyecto)")
     
     if conectar_bd():
         try:
