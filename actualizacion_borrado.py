@@ -42,7 +42,11 @@ def aumentar_presupuesto_proyectos_activos():
     try:
         fecha_actual = datetime.date.today()
 
-        condicion_activos = (Proyecto.fecha_fin > fecha_actual) | (Proyecto.fecha_fin.is_null(True))
+        # Proyectos activos: fecha_fin futura O NULL
+        fecha_fin_futura = Proyecto.fecha_fin > fecha_actual
+        fecha_fin_nula = Proyecto.fecha_fin.is_null(True)
+        condicion_activos = fecha_fin_futura | fecha_fin_nula
+        
         expresion_aumento = Proyecto.presupuesto * 1.10
         query = Proyecto.update(presupuesto=expresion_aumento).where(condicion_activos)
         filas_actualizadas = query.execute()
@@ -66,9 +70,9 @@ def reasignar_jefe_proyecto(id_proyecto, nuevo_jefe_dni):
     try:
         proyecto = Proyecto.get_or_none(Proyecto.id_proyecto == id_proyecto)
         
-        nuevo_jefe = Empleado.get_or_none(
-            (Empleado.dni == nuevo_jefe_dni) & (Empleado.jefe == True)
-        )
+        es_jefe = Empleado.jefe == True
+        es_mismo_dni = Empleado.dni == nuevo_jefe_dni
+        nuevo_jefe = Empleado.get_or_none(es_mismo_dni & es_jefe)
 
         if not proyecto:
             print(f"Error: No se encontró el proyecto con ID {id_proyecto}.")
@@ -128,7 +132,10 @@ def eliminar_proyectos_antiguos_baratos():
     try:
         fecha_actual = datetime.date.today()
 
-        condicion = (Proyecto.presupuesto < 10000) & (Proyecto.fecha_fin < fecha_actual)
+        presupuesto_bajo = Proyecto.presupuesto < 10000
+        fecha_pasada = Proyecto.fecha_fin < fecha_actual
+        condicion = presupuesto_bajo & fecha_pasada
+        
         query = Proyecto.delete().where(condicion) 
         filas_eliminadas = query.execute()
         
@@ -161,8 +168,10 @@ def transaccion_limpieza_proyectos(id_proyecto_destino):
         fecha_limite = fn.NOW() - SQL('INTERVAL 5 YEAR')
 
         # 3. Subconsulta: Obtener los IDs de los proyectos obsoletos
+        fecha_fin_antigua = Proyecto.fecha_fin < fecha_limite
+        fecha_fin_definida = Proyecto.fecha_fin.is_null(False)
         subconsulta_proyectos_obsoletos = Proyecto.select(Proyecto.id_proyecto).where(
-            (Proyecto.fecha_fin < fecha_limite) & (Proyecto.fecha_fin.is_null(False))
+            fecha_fin_antigua & fecha_fin_definida
         )
 
         # 4. Iniciar la transacción
