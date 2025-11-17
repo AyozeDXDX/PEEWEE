@@ -2,11 +2,10 @@
 
 import datetime
 from peewee import *
-# Importamos la conexión y los modelos de los archivos proporcionados
 from conexion import db, conectar_bd, cerrar_bd
 from crear_tablas import Cliente, Empleado, Proyecto, EmpleadoProyecto
 
-# --- 1. Actualizar Teléfono de Cliente (.save()) ---
+# --- 1. Actualizar Teléfono de Cliente ---
 def actualizar_telefono_cliente(dni_cif, nuevo_telefono):
     """
     Actualiza el número de teléfono de un cliente específico
@@ -16,14 +15,10 @@ def actualizar_telefono_cliente(dni_cif, nuevo_telefono):
         return
 
     try:
-        # 1. Encontrar al cliente
         cliente = Cliente.get_or_none(Cliente.dni_cif == dni_cif)
 
         if cliente:
-            # 2. Modificar el atributo
             cliente.tlf = nuevo_telefono
-            
-            # 3. Guardar los cambios en la BD
             cliente.save() 
             print(f"Teléfono del cliente '{cliente.nombre_cliente}' actualizado a {nuevo_telefono}.")
         else:
@@ -34,7 +29,7 @@ def actualizar_telefono_cliente(dni_cif, nuevo_telefono):
     finally:
         cerrar_bd()
 
-# --- 2. Aumentar Presupuesto Proyectos Activos (.update()) ---
+# --- 2. Aumentar Presupuesto Proyectos Activos ---
 def aumentar_presupuesto_proyectos_activos():
     """
     Aumenta el presupuesto de todos los proyectos activos en un 10%.
@@ -47,17 +42,9 @@ def aumentar_presupuesto_proyectos_activos():
     try:
         fecha_actual = datetime.date.today()
 
-        # Condición: proyectos cuya fecha de finalización sea posterior a hoy,
-        # O proyectos que no tengan fecha de finalización (NULL)
         condicion_activos = (Proyecto.fecha_fin > fecha_actual) | (Proyecto.fecha_fin.is_null(True))
-
-        # Expresión aritmética para el aumento (presupuesto * 1.10)
         expresion_aumento = Proyecto.presupuesto * 1.10
-
-        # Construir la consulta de actualización
         query = Proyecto.update(presupuesto=expresion_aumento).where(condicion_activos)
-        
-        # Ejecutar la consulta
         filas_actualizadas = query.execute()
         
         print(f"Se aumentó el presupuesto en un 10% a {filas_actualizadas} proyectos activos.")
@@ -77,10 +64,8 @@ def reasignar_jefe_proyecto(id_proyecto, nuevo_jefe_dni):
         return
 
     try:
-        # 1. Buscar el proyecto
         proyecto = Proyecto.get_or_none(Proyecto.id_proyecto == id_proyecto)
         
-        # 2. Buscar al nuevo empleado (y asegurarse de que sea jefe)
         nuevo_jefe = Empleado.get_or_none(
             (Empleado.dni == nuevo_jefe_dni) & (Empleado.jefe == True)
         )
@@ -93,25 +78,19 @@ def reasignar_jefe_proyecto(id_proyecto, nuevo_jefe_dni):
             print(f"Error: No se encontró al empleado {nuevo_jefe_dni} o no es jefe.")
             return
 
-        # 3. Reasignar la clave foránea (FK)
         proyecto.id_jefe_proyecto = nuevo_jefe
-        
-        # 4. Guardar el cambio.
-        # Peewee sabe que es un UPDATE porque 'proyecto' se obtuvo de la BD.
-        # save() por defecto NO crea un nuevo registro si el objeto ya existe.
         proyecto.save() 
         
         print(f"El proyecto '{proyecto.titulo_proyecto}' ha sido reasignado a '{nuevo_jefe.nombre}'.")
 
     except IntegrityError:
-        # Esto saltaría si el jefe ya dirige otro proyecto (ya que la FK es unique=True)
         print(f"Error de integridad: El empleado '{nuevo_jefe.nombre}' ya es jefe de otro proyecto.")
     except Exception as e:
         print(f"Error al reasignar el jefe de proyecto: {e}")
     finally:
         cerrar_bd()
 
-# --- 4. Eliminar Clientes sin Proyectos (Subconsulta) ---
+# --- 4. Eliminar Clientes sin Proyectos ---
 def eliminar_clientes_sin_proyectos():
     """
     Elimina los clientes que no tengan ningún proyecto asociado,
@@ -121,12 +100,8 @@ def eliminar_clientes_sin_proyectos():
         return
 
     try:
-        # 1. Subconsulta: Obtener los DNI/CIF de todos los clientes 
-        # que SÍ están en la tabla de Proyectos.
         subconsulta_clientes_con_proyectos = Proyecto.select(Proyecto.id_cliente).distinct()
 
-        # 2. Consulta Delete: Borrar de Cliente
-        # donde el dni_cif NO ESTÉ EN la subconsulta.
         query = Cliente.delete().where(
             Cliente.dni_cif.not_in(subconsulta_clientes_con_proyectos)
         )
@@ -140,7 +115,7 @@ def eliminar_clientes_sin_proyectos():
     finally:
         cerrar_bd()
 
-# --- 5. Borrar Proyectos Antiguos y Baratos (where()) ---
+# --- 5. Borrar Proyectos Antiguos y Baratos ---
 def eliminar_proyectos_antiguos_baratos():
     """
     Elimina proyectos cuyo presupuesto sea < 10,000 Y
@@ -153,12 +128,8 @@ def eliminar_proyectos_antiguos_baratos():
     try:
         fecha_actual = datetime.date.today()
 
-        # 1. Definir la condición con 'Y' (&)
         condicion = (Proyecto.presupuesto < 10000) & (Proyecto.fecha_fin < fecha_actual)
-
-        # 2. Construir la consulta de borrado
         query = Proyecto.delete().where(condicion) 
-
         filas_eliminadas = query.execute()
         
         print(f"Se eliminaron {filas_eliminadas} proyectos antiguos y con bajo presupuesto.")
@@ -168,7 +139,7 @@ def eliminar_proyectos_antiguos_baratos():
     finally:
         cerrar_bd()
 
-# --- 6. Transacción: Limpieza Proyectos Antiguos (5 años) ---
+# --- 6. Transacción: Limpieza Proyectos Antiguos ---
 def transaccion_limpieza_proyectos(id_proyecto_destino):
     """
     Realiza una transacción para:
@@ -247,32 +218,23 @@ def eliminar_cliente_y_proyectos(dni_cif):
         
         print(f"Iniciando borrado en cascada para el cliente: {cliente_a_borrar.nombre_cliente}...")
 
-        # 2. Iniciar transacción para asegurar que todo se borre o nada se borre
         with db.atomic():
-            
-            # 3. Subconsulta: Obtener los IDs de los proyectos de ESE cliente
             proyectos_del_cliente = Proyecto.select(Proyecto.id_proyecto).where(
                 Proyecto.id_cliente == cliente_a_borrar
             )
 
-            # 4. Borrar asignaciones (EmpleadoProyecto) de esos proyectos
-            # (Hay que borrar esto primero por la FK de EmpleadoProyecto -> Proyecto)
             q_delete_asig = EmpleadoProyecto.delete().where(
                 EmpleadoProyecto.id_proyecto.in_(proyectos_del_cliente)
             )
             asignaciones_borradas = q_delete_asig.execute()
             print(f"[Transacción] {asignaciones_borradas} asignaciones de empleados eliminadas.")
 
-            # 5. Borrar los Proyectos de ese cliente
-            # (Hay que borrar esto antes que el Cliente por la FK de Proyecto -> Cliente)
             q_delete_proy = Proyecto.delete().where(
                 Proyecto.id_cliente == cliente_a_borrar
             )
             proyectos_borrados = q_delete_proy.execute()
             print(f"[Transacción] {proyectos_borrados} proyectos eliminados.")
 
-            # 6. Finalmente, borrar el Cliente
-            # cliente_a_borrar.delete_instance() # También es válido
             q_delete_cli = Cliente.delete().where(
                 Cliente.dni_cif == cliente_a_borrar.dni_cif
             )
@@ -289,47 +251,118 @@ def eliminar_cliente_y_proyectos(dni_cif):
         cerrar_bd()
 
 
-# --- Bloque Principal de Ejecución (Ejemplos) ---
 if __name__ == '__main__':
     
-    print("--- Ejecutando Operaciones de Actualización y Borrado ---")
-
-    # (Asegúrate de tener datos insertados primero ejecutando inserciones.py)
+    print("PRUEBAS - actualizacion_borrado.py")
     
-    # --- Ejemplo 1: Actualizar teléfono ---
-    # print("\n--- 1. Actualizando teléfono de 'Empresa A' ---")
-    # actualizar_telefono_cliente(dni_cif='12345678A', nuevo_telefono='911111111')
+    print("PRUEBA 1: Actualizar teléfono de cliente")
+    actualizar_telefono_cliente('12345678A', '999999999')
 
-    # --- Ejemplo 2: Aumentar presupuestos ---
-    # (Necesitarías insertar proyectos activos/inactivos para probar esto)
-    # print("\n--- 2. Aumentando presupuestos 10% ---")
-    # aumentar_presupuesto_proyectos_activos()
+    print("PRUEBA 2: Aumentar presupuesto de proyectos activos")
+    if conectar_bd():
+        try:
+            for p in Proyecto.select():
+                print(f"  - {p.titulo_proyecto}: ${p.presupuesto}")
+        finally:
+            cerrar_bd()
+    
+    print("\nAumentando presupuesto un 10% a proyectos activos...")
+    aumentar_presupuesto_proyectos_activos()
+    
+    print("\nDespués:")
+    if conectar_bd():
+        try:
+            for p in Proyecto.select():
+                print(f"  - {p.titulo_proyecto}: ${p.presupuesto}")
+        finally:
+            cerrar_bd()
 
-    # --- Ejemplo 3: Reasignar jefe ---
-    # (Suponiendo que el proyecto 1 existe y el empleado '33333333Z' existe)
-    # (Para que funcione, 'Carlos García' (33333333Z) debería ser jefe=True)
-    # print("\n--- 3. Reasignando jefe del proyecto 1 ---")
-    # reasignar_jefe_proyecto(id_proyecto=1, nuevo_jefe_dni='33333333Z')
+    print("PRUEBA 3: Reasignar jefe de proyecto")
+    print("Reasignando proyecto 'App Móvil' a 'Juan Pérez' (11111111X)...")
+    print("(Nota: Esto debería fallar si Juan ya es jefe de otro proyecto)")
+    
+    if conectar_bd():
+        try:
+            p = Proyecto.get_or_none(Proyecto.titulo_proyecto == 'App Móvil')
+            if p:
+                print(f"Jefe actual: {p.id_jefe_proyecto.nombre}")
+            else:
+                print("Proyecto 'App Móvil' no encontrado")
+        finally:
+            cerrar_bd()
+    
+    reasignar_jefe_proyecto(id_proyecto=2, nuevo_jefe_dni='11111111X')
 
-    # --- Ejemplo 4: Eliminar clientes sin proyectos ---
-    # (Insertar un cliente nuevo sin proyecto para probar)
-    # print("\n--- 4. Eliminando clientes sin proyectos ---")
-    # eliminar_clientes_sin_proyectos()
+    print("PRUEBA 4: Eliminar clientes sin proyectos")
+    print("Clientes antes de eliminar:")
+    if conectar_bd():
+        try:
+            for c in Cliente.select():
+                proyectos = Proyecto.select().where(Proyecto.id_cliente == c)
+                print(f"  - {c.nombre_cliente} ({c.dni_cif}): {proyectos.count()} proyectos")
+        finally:
+            cerrar_bd()
+    
+    print("\nEliminando clientes sin proyectos...")
+    eliminar_clientes_sin_proyectos()
+    
+    print("\nClientes después de eliminar:")
+    if conectar_bd():
+        try:
+            for c in Cliente.select():
+                proyectos = Proyecto.select().where(Proyecto.id_cliente == c)
+                print(f"  - {c.nombre_cliente} ({c.dni_cif}): {proyectos.count()} proyectos")
+        finally:
+            cerrar_bd()
 
-    # --- Ejemplo 5: Eliminar proyectos antiguos/baratos ---
-    # (Necesitarías insertar un proyecto con presupuesto=5000 y fecha_fin='2020-01-01')
-    # print("\n--- 5. Eliminando proyectos antiguos y baratos ---")
-    # eliminar_proyectos_antiguos_baratos()
+    print("PRUEBA 5: Eliminar proyectos antiguos y baratos")
+    print("Proyectos antes de eliminar:")
+    if conectar_bd():
+        try:
+            for p in Proyecto.select():
+                print(f"  - {p.titulo_proyecto}: Presupuesto=${p.presupuesto}, Fin={p.fecha_fin}")
+        finally:
+            cerrar_bd()
+    
+    print("\nEliminando proyectos con presupuesto < 10000 y fecha_fin pasada...")
+    eliminar_proyectos_antiguos_baratos()
+    
+    print("\nProyectos después de eliminar:")
+    if conectar_bd():
+        try:
+            for p in Proyecto.select():
+                print(f"  - {p.titulo_proyecto}: Presupuesto=${p.presupuesto}, Fin={p.fecha_fin}")
+        finally:
+            cerrar_bd()
 
-    # --- Ejemplo 6: Transacción de limpieza ---
-    # (Esta es compleja de probar. Necesitas un proyecto terminado hace > 5 años
-    # y un proyecto destino (p.ej. ID 1) para mover los empleados)
-    # print("\n--- 6. Ejecutando transacción de limpieza (5 años) ---")
-    # transaccion_limpieza_proyectos(id_proyecto_destino=1)
+    print("PRUEBA 6: Transacción de limpieza (proyectos >5 años)")
+    print("Ejecutando transacción con proyecto destino ID=1...")
+    transaccion_limpieza_proyectos(id_proyecto_destino=1)
 
-    # --- Ejemplo 7: Eliminar cliente y cascada ---
-    # (Esto eliminará a 'Empresa B' y sus proyectos (si tuviera))
-    # print("\n--- 7. Eliminando cliente 'Empresa B' y sus datos ---")
-    # eliminar_cliente_y_proyectos(dni_cif='B87654321')
-
-    print("\n--- Operaciones finalizadas ---")
+    print("PRUEBA 7: Eliminar cliente y datos asociados (cascada)")
+    if conectar_bd():
+        try:
+            clientes = Cliente.select().count()
+            proyectos = Proyecto.select().count()
+            asignaciones = EmpleadoProyecto.select().count()
+            print(f"  - Clientes: {clientes}")
+            print(f"  - Proyectos: {proyectos}")
+            print(f"  - Asignaciones: {asignaciones}")
+        finally:
+            cerrar_bd()
+    
+    print("\nEliminando cliente 'Empresa B' (B87654321) y sus datos...")
+    eliminar_cliente_y_proyectos('B87654321')
+    
+    print("\nEstado después de eliminar:")
+    if conectar_bd():
+        try:
+            clientes = Cliente.select().count()
+            proyectos = Proyecto.select().count()
+            asignaciones = EmpleadoProyecto.select().count()
+            print(f"  - Clientes: {clientes}")
+            print(f"  - Proyectos: {proyectos}")
+            print(f"  - Asignaciones: {asignaciones}")
+        finally:
+            cerrar_bd()
+    print("PRUEBAS COMPLETADAS")
