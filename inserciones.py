@@ -71,6 +71,7 @@ def insertar_proyecto():
                 titulo_proyecto='Desarrollo Web Corporativa',
                 descripcion='Creación de la página web y tienda online para Empresa A.',
                 fecha_inicio='2024-01-15',
+                fecha_fin='2025-06-30',
                 presupuesto=Decimal('15000.00'),
                 id_cliente=cliente,
                 id_jefe_proyecto=jefe
